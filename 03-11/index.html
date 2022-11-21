@@ -1,0 +1,226 @@
+<html>
+
+<body>
+
+    <head>
+        <title>
+        </title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.26/vue.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+            integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-router/0.7.13/vue-router.min.js"> </script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    </head>
+    <div class="container">
+        <header>
+            <div class="branding">
+                <h3>Cadastro de programador</h3>
+            </div>
+        </header>
+        <main id="app">
+            <router-view></router-view>
+        </main>
+    </div>
+
+
+    <template id="listarProgramador">
+        <div class="action">
+            <button class="btn btn-default" v-link="{path:'/adicionarProgramador'}">
+                <span class="lyphicon glyphicon-plus"></span>
+                Cadastrar Programador
+            </button>
+        </div>
+        <div class="filter row">
+            <div class="form-group col-sm-3">
+                <input v-model="filtro" class="form-control" placeholder="Procurar" id="search-element" required />
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table id="myTable" class="table highlight bordered">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Salario</th>
+                        <th>Idade</th>
+                        <th>Excluir</th>
+                        <th>Alterar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="programador in programadores | filterBy filtro">
+                        <td>{{programador.nome}}</td>
+                        <td>{{programador.salario}}</td>
+                        <td>{{programador.idade}}</td>
+                        <td><a class="btn btn-danger btn-xs" v-link="#"
+                                v-on:click="excluirProgramador(programador.idProgramador)">excluir</a>
+                        </td>
+                        <td>
+                            <button v-on:click="obterProgramador" class="btn btn-success">alterar</button>
+                            <!-- <a class="btn btn-success" v-link="#" v-link="{path:'/adicionarProgramador/', params:{idProgramador:programador.idProgramador}}">alterar</a> -->
+                                <!-- v-on:click="alterarProgramador(programador.idProgramador)">alterar</a> -->
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <template id="adicionarProgramador">
+        <form @submit.prevent="criarProgramador">
+            <div class="form-group">
+                <label for="nome">Nome</label><br>
+                <input class="form-control" id="nome" type="text" v-model="nome" required />
+            </div>
+
+            <div class="form-group">
+                <label for="salario">Salario</label><br>
+                <input class="form-control" id="salario" type="text" v-model="salario" required />
+            </div>
+
+            <div class="form-group">
+                <label for="idade">Idade</label><br>
+                <input class="form-control" id="idade" type="text" v-model="idade" required />
+            </div>
+            <button type="submit" class="btn btn-primary"
+                style="width: 58vw; margin-left: 7vw; margin-top: 50px">Cadastrar</button>
+        </form>
+    </template>
+
+    <template id="editarProgramador">
+        <div class="action">
+            <button class="btn btn-default" v-link="{path:'/'}">
+                <span class="lyphicon glyphicon-plus"></span>
+                Listar Programadores
+            </button>
+        </div>
+        <form @submit.prevent="alterarProgramador">
+            <div class="form-group">
+                <label for="nome">Nome</label><br>
+                <input class="form-control" id="nome" type="text" v-model="nome" required />
+            </div>
+
+            <div class="form-group">
+                <label for="salario">Salario</label><br>
+                <input class="form-control" id="salario" type="text" v-model="salario" required />
+            </div>
+
+            <div class="form-group">
+                <label for="idade">Idade</label><br>
+                <input class="form-control" id="idade" type="text" v-model="idade" required />
+            </div>
+            <button type="submit" class="btn btn-primary"
+                style="width: 58vw; margin-left: 7vw; margin-top: 50px">Salvar</button>
+        </form>
+    </template>
+
+    <script>
+        var programadores = [];
+
+        var ListarProgramador = Vue.extend({
+            template: '#listarProgramador',
+            data: function () {
+                axios.get('http://localhost:8080/api/programadores').then(resp => {
+                    this.programadores = (resp.data)
+                    console.log(resp);
+                });
+
+                return { programadores: programadores, filtro: '' }
+            },
+            methods: {
+                excluirProgramador: function (id) {
+                    if (confirm('Deseja excluir?'))
+                        axios.delete('http://localhost:8080/api/excluirProgramador/' + id).then(resp => {
+                            console.log(this.programadores);
+
+                            axios.get('http://localhost:8080/api/programadores').then(resp => {
+                                this.programadores = (resp.data)
+                                console.log(resp);
+                            });
+                            router.go('/');
+                        })
+                            .catch((erro) => {
+                                console.log(erro);
+                            });
+                },
+                obterProgramador: function(id){
+                    router.go('/editarProgramador');
+                }
+
+            }
+
+        });
+
+        var adicionarProgramador = Vue.extend({
+            template: '#adicionarProgramador',
+            data: function () {
+                return {
+                    nome: '',
+                    idade: '',
+                    salario: ''
+                }
+            },
+            methods: {
+                criarProgramador: function () {
+                    axios.post('http://localhost:8080/api/inserirProgramador', {
+                        nome: this.nome,
+                        salario: this.salario,
+                        idade: this.salario
+
+
+                    });
+                    axios.get('http://localhost:8080/api/programadores').then(resp => {
+                        this.programadores = (resp.data)
+                        console.log(resp);
+                    });
+                    router.go('/');
+                },
+            }
+        });
+
+        var editarProgramador = Vue.extend({
+            template: '#editarProgramador',
+            data: function(){
+
+                 axios.get('http://localhost:8080/api/obterProgramador/32').then(resp => {
+                    
+                        this.nome = resp.data.nome;
+                        this.salario = resp.data.salario;
+                        this.idade = resp.data.idade;
+                
+
+                 });
+            },
+            methods:{
+                alterarProgramdor: function(){
+                    axios.put('http://localhost:8080/api/alterarProgramador', {
+                        nome: this.nome,
+                        salario: this.salario,
+                        idade: this.salario
+
+
+                    });
+                }
+            }
+
+
+        });
+
+        /*var editarProgramador = Vue.extend({
+            template: '#editarProgramador',
+            data: function () {
+                axios.get('http://localhost:8080/api/obterProgramador/' + id,{nome: })
+            }
+        })*/
+
+        var router = new VueRouter();
+        router.map({
+            '/': { component: ListarProgramador },
+            '/adicionarProgramador': { component: adicionarProgramador },
+            '/editarProgramador' : { component: editarProgramador}
+        })
+            .start(Vue.extend({}), '#app')
+    </script>
+</body>
+
+</html>
